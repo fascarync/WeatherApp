@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Weather & Map Forecast</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+    }
+    #map {
+        height: 350px;
+        width: 100%;
+		display: none;
+    }
+    #forecast {
+        padding: 20px;
+		display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        background: #f7f7f7;
+    }
+    .forecast-day {
+        background: #fff;
+        padding: 10px;
+        width: 48%;
+        border-radius: 6px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    .forecast-day img {
+        max-width: 80px;
+    }
+</style>
+</head>
+<body>
+
+<h2 style="text-align:center;">Local Weather Forecast</h2>
+<div id="map"></div>
+<div id="forecast"></div>
+
+<script>
+let map;
+let infoWindow;
+
+async function initApp() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(async position => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+
+            // Initialize Google Map
+            initMap(lat, lon);
+
+            try {
+                // Step 1: Get grid point info from NWS
+                const pointResp = await fetch(`https://api.weather.gov/points/${lat},${lon}`);
+                const pointData = await pointResp.json();
+                const forecastUrl = pointData.properties.forecast;
+
+                // Step 2: Get forecast
+                const forecastResp = await fetch(forecastUrl);
+                const forecastData = await forecastResp.json();
+
+                // Take only first 14 periods (7 days: day/night pairs)
+                const periods = forecastData.properties.periods;
+				
+				const dailySummaries = [];
+                for (let i = 0; i < periods.length; i += 2) {
+                    if (periods[i+1]) { // has both day & night
+                        dailySummaries.push({
+                            dayName: periods[i].name,
+                            dayIcon: periods[i].icon,
+                            dayTemp: `${periods[i].temperature}°${periods[i].temperatureUnit}`,
+                            dayShort: periods[i].shortForecast,
+                            dayDetail: periods[i].detailedForecast,
+                            nightName: periods[i+1].name,
+                            nightIcon: periods[i+1].icon,
+                            nightTemp: `${periods[i+1].temperature}°${periods[i+1].temperatureUnit}`,
+                            nightShort: periods[i+1].shortForecast,
+                            nightDetail: periods[i+1].detailedForecast
+                        });
+                    }
+                }
+
+                displayForecast(dailySummaries, lat, lon);
+				
+            } catch (err) {
+                document.getElementById("forecast").innerText = "Error fetching forecast: " + err;
+            }
+        }, () => {
+            document.getElementById("forecast").innerText = "Location permission denied.";
+        });
+    } else {
+        document.getElementById("forecast").innerText = "Geolocation is not supported by this browser.";
+    }
+}
+
+function initMap(lat, lon) {
+    const map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat, lng: lon },
+        zoom: 10,
+		mapId: "WEATHER_MAP_ID"
+    });
+	
+	/*
+    new google.maps.Marker({
+        position: { lat, lng: lon },
+        map: map
+    });
+	*/
+	
+	    // The advanced marker, positioned at Uluru
+    const marker = new google.maps.marker.AdvancedMarkerElement({
+        map,
+        position: { lat, lng: lon }
+    });
+	
+	infoWindow = new google.maps.InfoWindow();
+}
+
+/* old
+function displayForecast(periods, lat, lon) {
+    const forecastEl = document.getElementById("forecast");
+    forecastEl.innerHTML = "";
+
+    periods.forEach((period, index) => {
+        // Create forecast card
+        const div = document.createElement("div");
+        div.className = "forecast-day";
+        div.innerHTML = `
+            <strong>${period.name}</strong><br>
+            <img src="${period.icon}" alt="${period.shortForecast}"><br>
+            ${period.temperature}°${period.temperatureUnit}<br>
+            <small>${period.shortForecast}</small>
+        `;
+        forecastEl.appendChild(div);
+
+        // Create map marker
+        const marker = new google.maps.Marker({
+            position: { lat, lng: lon + index * 0.002 }, // slight offset so markers don't overlap
+            map: map,
+            title: period.name
+        });
+
+        marker.addListener("click", () => {
+            infoWindow.setContent(`
+                <div style="max-width:200px">
+                    <strong>${period.name}</strong><br>
+                    <img src="${period.icon}" alt="${period.shortForecast}" style="max-width:100%"><br>
+                    ${period.temperature}°${period.temperatureUnit}<br>
+                    ${period.detailedForecast}
+                </div>
+            `);
+            infoWindow.open(map, marker);
+        });
+    });
+}
+*/
+
+function displayForecast(dailySummaries, lat, lon) {
+    const forecastEl = document.getElementById("forecast");
+    forecastEl.innerHTML = "";
+
+    dailySummaries.forEach((day, index) => {
+        // Create forecast card
+        const div = document.createElement("div");
+        div.className = "forecast-day";
+        div.innerHTML = `
+            <strong>${day.dayName}</strong><br>
+            <img src="${day.dayIcon}" alt="${day.dayShort}"><br>
+            ${day.dayTemp}<br>
+            <small>${day.dayDetail}</small><br><br>
+            <strong>${day.nightName}</strong><br>
+            <img src="${day.nightIcon}" alt="${day.nightShort}"><br>
+            ${day.nightTemp}<br>
+            <small>${day.nightDetail}</small>
+        `;
+        forecastEl.appendChild(div);
+
+
+		// Create custom icon marker
+		/*
+        const marker = new google.maps.Marker({
+            position: { lat, lng: lon + index * 0.002 },
+            map: map,
+            title: `${day.dayName} - ${day.dayShort}`,
+            icon: {
+                url: day.dayIcon,
+                scaledSize: new google.maps.Size(50, 50)
+            }
+        });
+		*/
+		const marker = new google.maps.marker.AdvancedMarkerElement({
+			map,
+			position: { lat, lng: lon + index * 0.002 },
+			title: `${day.dayName} - ${day.dayShort}`,
+
+		});
+
+        marker.addListener("click", () => {
+            infoWindow.setContent(`
+                <div style="max-width:220px">
+                    <strong>${day.dayName}</strong><br>
+                    <img src="${day.dayIcon}" alt="${day.dayShort}" style="max-width:50px"><br>
+                    ${day.dayTemp} - ${day.dayShort}<br><br>
+                    <strong>${day.nightName}</strong><br>
+                    <img src="${day.nightIcon}" alt="${day.nightShort}" style="max-width:50px"><br>
+                    ${day.nightTemp} - ${day.nightShort}<br><br>
+                    <em>${day.dayDetail}</em><br><br>
+                    <em>${day.nightDetail}</em>
+                </div>
+            `);
+            infoWindow.open(map, marker);
+        });
+    });
+}
+
+window.initApp = initApp;
+</script>
+
+<!-- Replace YOUR_GOOGLE_MAPS_API_KEY with your actual key -->
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDJMh2yq_dkOpJnb_EbhEw1wDfjlkbKMLs&callback=initApp&libraries=marker"></script>
+
+</body>
+</html>
