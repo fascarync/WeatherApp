@@ -48,11 +48,11 @@ let infoWindow;
 
 async function initApp() {
 
-	document.getElementById("debug").textContent += "InitApp ";
+	document.getElementById("debugTxt").textContent += "InitApp ";
 	
     if (navigator.geolocation) {
 
-document.getElementById("debug").textContent += "geo ";
+document.getElementById("debugTxt").textContent += "geo ";
 		
         navigator.geolocation.getCurrentPosition(async position => {
             const lat = position.coords.latitude;
@@ -62,7 +62,7 @@ document.getElementById("debug").textContent += "geo ";
             // Initialize Google Map
             initMap(lat, lon);
 			
-document.getElementById("debug").textContent += "try ";
+document.getElementById("debugTxt").textContent += "try ";
             try {
                 // Step 1: Get grid point info from NWS
                 const pointResp = await fetch(`https://api.weather.gov/points/${lat},${lon}`);
@@ -108,7 +108,7 @@ document.getElementById("debug").textContent += "try ";
 }
 
 function initMap(lat, lon) {
-document.getElementById("debug").textContent += "initMap ";
+document.getElementById("debugTxt").textContent += "initMap ";
     const map = new google.maps.Map(document.getElementById("map"), {
         center: { lat, lng: lon },
         zoom: 10,
@@ -172,13 +172,13 @@ function displayForecast(periods, lat, lon) {
 
 function displayForecast(dailySummaries, lat, lon) {
 
-	document.getElementById("debug").textContent += "displayForecast ";
+	document.getElementById("debugTxt").textContent += "displayForecast ";
     const forecastEl = document.getElementById("forecast");
     forecastEl.innerHTML = "";
 
     dailySummaries.forEach((day, index) => {
-		document.getElementById("debug").textContent += index;
-		document.getElementById("debug").textContent += " ";
+		document.getElementById("debugTxt").textContent += index;
+		document.getElementById("debugTxt").textContent += " ";
         // Create forecast card
         const div = document.createElement("div");
         div.className = "forecast-day";
@@ -240,5 +240,6 @@ window.initApp = initApp;
 
 </body>
 </html>
+
 
 
