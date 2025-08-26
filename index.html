@@ -100,9 +100,11 @@ document.getElementById("debugTxt").textContent += "try ";
                 document.getElementById("forecast").innerText = "Error fetching forecast: " + err;
             }
         }, () => {
+document.getElementById("debugTxt").textContent += "Error Permission ";
             document.getElementById("forecast").innerText = "Location permission denied.";
         });
     } else {
+document.getElementById("debugTxt").textContent += "Error Geo ";
         document.getElementById("forecast").innerText = "Geolocation is not supported by this browser.";
     }
 }
@@ -240,6 +242,7 @@ window.initApp = initApp;
 
 </body>
 </html>
+
 
 
 
