@@ -48,6 +48,8 @@ let infoWindow;
 
 async function initApp() {
 
+    document.write(iframes[0].getAttribute("id"));
+	
 	document.getElementById("debugTxt").textContent += "InitApp ";
 	
     if (navigator.geolocation) {
@@ -242,6 +244,7 @@ window.initApp = initApp;
 
 </body>
 </html>
+
 
 
 
